@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 riscv-rt = { version = "0.14.0" }
 
+[profile.release]
+opt-level = "z"
+codegen-units = 1
+
