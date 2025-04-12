@@ -1,0 +1,8 @@
+[package]
+name = "riscv-rt-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+riscv-rt = { version = "0.14.0" }
+
