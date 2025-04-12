@@ -2,58 +2,44 @@
 #![no_std]
 #![no_main]
 
-extern crate alloc;
-
 use core::arch::riscv32;
-use core::panic::PanicInfo;
-use core::sync::atomic::{AtomicUsize, Ordering};
 use riscv_rt::entry;
-use riscv_rt_test::{print, println};
-
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
+use riscv_rt_test::uart::Uart;
+use riscv_rt_test::{print, println, thread};
 
 #[entry]
 unsafe fn main(hartid: usize) -> ! {
-    loop {
-        if hartid == COUNTER.load(Ordering::Relaxed) {
-            print!("{}, ", hartid);
-            COUNTER.fetch_add(1, Ordering::Relaxed);
-            break;
-        }
-
-        riscv32::nop();
-    }
-
     if hartid == 0 {
-        let mut string = alloc::string::String::new();
+        println!("Hello from main hart!");
 
-        string.push_str("adasdasd");
-        string.push_str("123123");
+        thread::spawn(|| loop {
+            print!(
+                "{}",
+                Uart::read_char_blocked() // Uart::read_char_blocked()
+            )
+        });
 
-        println!("string: {}", string);
+        // for _ in 0..1000000 {
+        //     riscv32::nop();
+        // }
+
+        loop {}
+    } else {
+        thread::lock_hart(hartid)
     }
-
-    while COUNTER.load(Ordering::Relaxed) != 32 {}
-
-    shutdown()
 }
 
-#[no_mangle]
-pub extern "Rust" fn _mp_hook(hartid: usize) -> bool {
-    hartid == 0
-}
-
-fn shutdown() -> ! {
-    unsafe { (0x100000 as *mut u16).write_volatile(0x5555) };
+pub fn getchar() -> u8 {
+    const UART_BASE: usize = 0x1000_0000;
 
     loop {
-        unsafe { riscv32::wfi() }
+        unsafe {
+            let status = (UART_BASE as *mut u8).add(5).read_volatile();
+            if status & 1 != 0 {
+                return (UART_BASE as *mut u8).read_volatile();
+            } else {
+                riscv32::nop();
+            }
+        }
     }
-}
-
-#[panic_handler]
-fn panic_handle(info: &PanicInfo) -> ! {
-    println!("\n{}", info);
-
-    shutdown()
 }
