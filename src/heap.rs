@@ -1,9 +1,7 @@
 use core::alloc::{GlobalAlloc, Layout};
 
-use crate::println;
-
 #[global_allocator]
-static GLOBAL_ALLOCATOR: BumpAllocator = BumpAllocator::new();
+pub static GLOBAL_ALLOCATOR: BumpAllocator = BumpAllocator::new();
 
 #[derive(Debug, Default)]
 pub struct BumpAllocator {
@@ -18,12 +16,6 @@ impl BumpAllocator {
 
 unsafe impl GlobalAlloc for BumpAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        println!(
-            "\ncalled alloc with size: {}, align: {}",
-            layout.size(),
-            layout.align()
-        );
-
         let heap_start = riscv_rt::heap_start() as usize;
         let ptr = (heap_start + self.offset) as *mut u8;
 
