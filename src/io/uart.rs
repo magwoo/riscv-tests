@@ -1,6 +1,6 @@
 use core::arch::riscv32;
 
-use crate::{extra::shutdown, println};
+use crate::{extra::shutdown, print, println};
 
 const UART_BASE: *const u8 = 0x1000_0000 as _;
 
@@ -60,6 +60,10 @@ impl Uart {
 fn special_char_map(char: char) -> Option<char> {
     match char {
         '\r' => println!(),
+        _ => (),
+    };
+
+    match char {
         _ => return Some(char),
     };
 
@@ -69,6 +73,7 @@ fn special_char_map(char: char) -> Option<char> {
 fn special_byte_map(byte: u8) -> Option<u8> {
     match byte {
         3 => shutdown(),
+        127 => print!("\x1B[1D \x1B[1D"),
         _ => return Some(byte),
     };
 
